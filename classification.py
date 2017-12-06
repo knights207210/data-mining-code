@@ -97,11 +97,16 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_train)
         scaler.transform(x_test)
 
-
+        ###SGDclassifier has close correlation with whether the data is scaled or not
+        ###SGDclassifier returns only label
         model = SGDClassifier(loss = 'log', penalty = 'l2', class_weight = 'balanced')
+        ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
+        ### RandomForest could return the proba
         # model = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
+        ###GradientBoosting return the proba
         # model = GradientBoostingClassifier()
+        ###adaboost could return the proba
         # model = AdaBoostClassifier( base_estimator = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced'),
 
                          #algorithm="SAMME",
