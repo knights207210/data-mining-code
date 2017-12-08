@@ -99,11 +99,11 @@ def classification(train_ui_up_mp_um_features):
 
         ###SGDclassifier has close correlation with whether the data is scaled or not
         ###SGDclassifier returns only label
-        model = SGDClassifier(loss = 'log', penalty = 'l2', class_weight = 'balanced')
+        # model = SGDClassifier(loss = 'log', penalty = 'l2', class_weight = 'balanced')
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
         ### RandomForest could return the proba
-        # model = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
+        model = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
         ###GradientBoosting return the proba
         # model = GradientBoostingClassifier()
         ###adaboost could return the proba
@@ -113,7 +113,7 @@ def classification(train_ui_up_mp_um_features):
                          #n_estimators=50, learning_rate=0.1)
         model.fit(x_train, y_train)
         predictions = model.predict(x_test)
-        # pre = model.predict_proba(x_test)
+        pre = model.predict_proba(x_test)
         
         ###grid search
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
@@ -131,7 +131,7 @@ def classification(train_ui_up_mp_um_features):
             jj = ii
             print("%i:\t" % jj + "\t".join(str(confusion[ii][x]) for x in range(0, 2)))
 
-        print(predictions)
+        print(pre)
         print(f1_score(y_test, predictions))
         print(precision_score(y_test, predictions))
         print(recall_score(y_test, predictions))
