@@ -7,6 +7,7 @@ import psycopg2
 import math
 import traceback
 import matplotlib.pyplot as plt
+import lightgbm as lgb
 from collections import defaultdict
 
 from sklearn import preprocessing
@@ -97,6 +98,47 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_train)
         scaler.transform(x_test)
 
+
+
+        ###lightgbm
+        # create dataset for lightgbm
+        lgb_train = lgb.Dataset(x_train, y_train)
+        lgb_eval = lgb.Dataset(x_test, y_test, reference=lgb_train)
+
+        # specify your configurations as a dict
+        params = {
+            'task': 'predict',
+            'boosting_type': 'gbdt',
+            'objective': 'regression',
+            'metric': {'l2', 'auc'},
+            'num_leaves': 31,
+            'learning_rate': 0.05,
+            'feature_fraction': 0.9,
+            'bagging_fraction': 0.8,
+            'bagging_freq': 5,
+            'verbose': 0
+        }
+
+        print('Start training...')
+        # train
+        gbm = lgb.train(params,
+                lgb_train,
+                num_boost_round=20,
+                valid_sets=lgb_eval,
+                early_stopping_rounds=5)
+
+        print('Save model...')
+        # save model to file
+        gbm.save_model('model.txt')
+
+        print('Start predicting...')
+        # predict
+        y_pred = gbm.predict(x_test)
+        count = 0
+        for i in range(0,len(y_pred)):
+            if(y_pred[i] > 0.5):
+                print(y_pred[i])
+                count+=1
         ###SGDclassifier has close correlation with whether the data is scaled or not
         ###SGDclassifier returns only label
         # model = SGDClassifier(loss = 'log', penalty = 'l2', class_weight = 'balanced')
@@ -115,6 +157,7 @@ def classification(train_ui_up_mp_um_features):
         predictions = model.predict(x_test)
         pre = model.predict_proba(x_test)
         
+
         ###grid search
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
         #gsearch1 = GridSearchCV(estimator = RandomForestClassifier(n_estimators = 70,
@@ -139,6 +182,7 @@ def classification(train_ui_up_mp_um_features):
         # print(classification_report(y_test, predictions))
 
     print('Finish!')
+    print(count)
 
 if __name__ == "__main__":
 

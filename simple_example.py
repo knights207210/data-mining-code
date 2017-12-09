@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 
 
-# load or create your dataset
+# load or create your dataset/Users/hanxu/Desktop/DM/simple_example.py
 print('Load data...')
 df_train = pd.read_csv('regression/regression.train', header=None, sep='\t')
 df_test = pd.read_csv('regression/regression.test', header=None, sep='\t')
@@ -50,5 +50,7 @@ print('Start predicting...')
 # predict
 y_pred = gbm.predict(X_test, num_iteration=gbm.best_iteration)
 print(y_pred)
+print ('test...')
+print(y_test)
 # eval
 print('The rmse of prediction is:', mean_squared_error(y_test, y_pred) ** 0.5)
