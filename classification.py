@@ -13,7 +13,7 @@ from collections import defaultdict
 from sklearn import preprocessing
 from sklearn.grid_search import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
 from sklearn import svm
 from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix, roc_auc_score, classification_report
@@ -100,7 +100,7 @@ def classification(train_ui_up_mp_um_features):
 
 
 
-        ###lightgbm
+###lightgbm-----------------------------------------------------------------------
         # create dataset for lightgbm
         lgb_train = lgb.Dataset(x_train, y_train)
         lgb_eval = lgb.Dataset(x_test, y_test, reference=lgb_train)
@@ -134,18 +134,29 @@ def classification(train_ui_up_mp_um_features):
         print('Start predicting...')
         # predict
         y_pred = gbm.predict(x_test)
-        count = 0
-        for i in range(0,len(y_pred)):
-            if(y_pred[i] > 0.5):
-                print(y_pred[i])
-                count+=1
-        ###SGDclassifier has close correlation with whether the data is scaled or not
-        ###SGDclassifier returns only label
-        # model = SGDClassifier(loss = 'log', penalty = 'l2', class_weight = 'balanced')
+        # feature importances
+        #print('Feature importances:', list(gbm.feature_importances_))
+
+        # other scikit-learn modules
+        estimator = lgb.LGBMRegressor(num_leaves=31)
+
+        param_grid = {
+            'learning_rate': [0.01, 0.1, 1],
+            'n_estimators': [20, 40]
+        }
+
+        gbm = GridSearchCV(estimator, param_grid)
+
+        gbm.fit(x_train, y_train)
+
+        print('Best parameters found by grid search are:', gbm.best_params_)
+
+###other models-----------------------------------------------------------------------------------------    
+        model = LogisticRegression(class_weight = 'balanced')
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
         ### RandomForest could return the proba
-        model = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
+        # model = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
         ###GradientBoosting return the proba
         # model = GradientBoostingClassifier()
         ###adaboost could return the proba
@@ -182,7 +193,6 @@ def classification(train_ui_up_mp_um_features):
         # print(classification_report(y_test, predictions))
 
     print('Finish!')
-    print(count)
 
 if __name__ == "__main__":
 
