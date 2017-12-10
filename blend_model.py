@@ -102,8 +102,13 @@ def classification(train_ui_up_mp_um_features):
 
         ###lightgbm-----------------------------------------------------------------------
         # create dataset for lightgbm
-        lgb_train = lgb.Dataset(x_train, y_train)
-        lgb_eval = lgb.Dataset(x_test, y_test, reference=lgb_train)
+        print('Start GBM')
+        x_train_GBM = x_train
+        y_train_GBM = y_train
+        x_test_GBM = x_test
+        y_test_GBM = y_test
+        lgb_train = lgb.Dataset(x_train_GBM, y_train_GBM)
+        lgb_eval = lgb.Dataset(x_test_GBM, y_test_GBM, reference=lgb_train)
 
         # specify your configurations as a dict
         params = {
@@ -119,7 +124,7 @@ def classification(train_ui_up_mp_um_features):
             'verbose': 0
         }
 
-        print('Start training...')
+       # print('Start training...')
         # train
         gbm = lgb.train(params,
                 lgb_train,
@@ -127,35 +132,32 @@ def classification(train_ui_up_mp_um_features):
                 valid_sets=lgb_eval,
                 early_stopping_rounds=5)
 
-        print('Save model...')
+        #print('Save model...')
         # save model to file
         gbm.save_model('model.txt')
 
-        print('Start predicting...')
+        
+
+        #print('Start predicting...')
         # predict
-        pre_GBM = gbm.predict(x_test)
+        pre_GBM = gbm.predict(x_test_GBM)
         '''
         # feature importances
         #print('Feature importances:', list(gbm.feature_importances_))
-
         # other scikit-learn modules
         estimator = lgb.LGBMRegressor(num_leaves=31)
-
         param_grid = {
             'learning_rate': [0.01, 0.1, 1],
             'n_estimators': [20, 40]
         }
-
         gbm = GridSearchCV(estimator, param_grid)
-
         gbm.fit(x_train, y_train)
-
         print('Best parameters found by grid search are:', gbm.best_params_)
         '''
 
         ###bagging of RF
         ###lightgbm-----------------------------------------------------------------------
-
+        print('Start RF_bag')
         # specify your configurations as a dict
         params = {
             'task': 'predict',
@@ -170,7 +172,7 @@ def classification(train_ui_up_mp_um_features):
             'verbose': 0
         }
 
-        print('Start training...')
+        #print('Start training...')
         # train
         gbm = lgb.train(params,
                 lgb_train,
@@ -178,19 +180,24 @@ def classification(train_ui_up_mp_um_features):
                 valid_sets=lgb_eval,
                 early_stopping_rounds=5)
 
-        print('Save model...')
+        #print('Save model...')
         # save model to file
         gbm.save_model('model_rf.txt')
 
-        print('Start predicting...')
+        
+        #print('Start predicting...')
         # predict
-        pre_RF_bag = gbm.predict(x_test)
+        pre_RF_bag = gbm.predict(x_test_GBM)
 
         ###LR model-----------------------------------------------------------------------------------------    
+        print('Start LR')
         model = LogisticRegression(class_weight = 'balanced')
-        #model_LR = LogisticRegression(class_weight = 'balanced')
-        #model_LR.fit(x_train, y_train)
-        #pre_LR = model_LR.predict_proba(x_test)
+        model_LR = LogisticRegression(class_weight = 'balanced')
+        x_train_LR = x_train
+        y_train_LR = y_train
+        x_test_LR = x_test
+        model_LR.fit(x_train_LR, y_train_LR)
+        pre_LR = model_LR.predict_proba(x_test_LR)
 
         ###grid search for LR
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
@@ -203,9 +210,13 @@ def classification(train_ui_up_mp_um_features):
         ###SVM model------------------------------------------------------------------------------------------
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
-        # model_SVM = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
-        # model_SVM.fit(x_train, y_train)
-        # pre_SVM = model_SVM.predict(x_test)
+        print('Start SVM')
+        model_SVM = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
+        x_train_SVM = x_train
+        y_train_SVM = y_train
+        x_test_SVM = x_test
+        model_SVM.fit(x_train_SVM, y_train_SVM)
+        pre_SVM = model_SVM.predict(x_test_SVM)
 
         ###grid search for SVM
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
@@ -218,9 +229,13 @@ def classification(train_ui_up_mp_um_features):
         ### RF model--------------------------------------------------------------------------------------------
         ### RandomForest could return the proba
         # model = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
-        # model_RF = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
-        # model_RF.fit(x_train,y_train)
-        # pre_RF = model_RF.predict_proba(x_test)
+        print('Start RF')
+        model_RF = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
+        x_train_RF = x_train
+        y_train_RF = y_train
+        x_test_RF = x_test
+        model_RF.fit(x_train_RF,y_train_RF)
+        pre_RF = model_RF.predict_proba(x_test_RF)
 
         ### grid search for RF
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
@@ -236,12 +251,16 @@ def classification(train_ui_up_mp_um_features):
 
                          #algorithm="SAMME",
                          #n_estimators=50, learning_rate=0.1)
-        # model_Ada = AdaBoostClassifier( base_estimator = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced'),
+        print('Start Ada')
+        model_Ada = AdaBoostClassifier( base_estimator = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced'),
 
-                         #algorithm="SAMME",
-                         #n_estimators=50, learning_rate=0.1)
-        # model_Ada.fit(x_train,y_train)
-        # pre_Ada = model_Ada.predict_proba(x_test)
+                        algorithm="SAMME",
+                        n_estimators=50, learning_rate=0.1)
+        x_train_Ada = x_train
+        y_train_Ada = y_train
+        x_test_Ada = x_test
+        model_Ada.fit(x_train_Ada,y_train_Ada)
+        pre_Ada = model_Ada.predict_proba(x_test_Ada)
         
         ###grid search for Ada
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
@@ -274,10 +293,12 @@ def classification(train_ui_up_mp_um_features):
 
     print('Start blend')
 
-    w = [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.3]
-    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_FM[:,1]+w[6]*pre_RF_bag+w[7]*pre_Xgb
-    fpr, tpr, thresholds = roc_curve(y[test], pre_blend[:, 1])  
+    w = [0.1,0.1,0.1,0.2,0.1,0.2]
+    #pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_FM[:,1]+w[6]*pre_RF_bag+w[7]*pre_Xgb
+    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_RF_bag
+    fpr, tpr, thresholds = roc_curve(y_test, pre_blend)  
     roc_auc = auc(fpr, tpr)  
+    print(roc_auc)
 
 if __name__ == "__main__":
 
