@@ -100,7 +100,7 @@ def classification(train_ui_up_mp_um_features):
 
 
 
-###lightgbm-----------------------------------------------------------------------
+"""lightgbm-----------------------------------------------------------------------
         # create dataset for lightgbm
         lgb_train = lgb.Dataset(x_train, y_train)
         lgb_eval = lgb.Dataset(x_test, y_test, reference=lgb_train)
@@ -150,6 +150,7 @@ def classification(train_ui_up_mp_um_features):
         gbm.fit(x_train, y_train)
 
         print('Best parameters found by grid search are:', gbm.best_params_)
+        """
 
 ###other models-----------------------------------------------------------------------------------------    
         model = LogisticRegression(class_weight = 'balanced')
