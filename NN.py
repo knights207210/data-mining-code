@@ -100,8 +100,9 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_test)
 
 ### NN models-----------------------------------------------------------------------------------------    
-        model = MLPClassifier(solver='lbfgs', alpha=1e-5,
-                    hidden_layer_sizes=(5, 2), random_state=1)
+        model = MLPClassifier(solver='adam', alpha=1e-5,
+                    hidden_layer_sizes=(5, 2), random_state=1, shuffle = True, early_stopping = True,
+                    learning_rate_init = 0.001, batch_size = 'auto')
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
         ### RandomForest could return the proba
@@ -138,7 +139,7 @@ def classification(train_ui_up_mp_um_features):
         #print(f1_score(y_test, predictions))
         #print(precision_score(y_test, predictions))
         #print(recall_score(y_test, predictions))
-        #print(roc_auc_score(y_test, predictions))
+        # print(roc_auc_score(y_test, predictions))
         # print(classification_report(y_test, predictions))
         fpr, tpr, thresholds = roc_curve(y_test, pre[:,1])  
         roc_auc = auc(fpr, tpr)  
