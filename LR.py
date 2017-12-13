@@ -99,10 +99,13 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_train)
         scaler.transform(x_test)
 
-### NN models-----------------------------------------------------------------------------------------    
-        model = MLPClassifier(solver='adam', alpha=1e-5,
-                    hidden_layer_sizes=(80,20), random_state=1,
-                    learning_rate_init = 0.01, batch_size = 'auto')
+### LR models-----------------------------------------------------------------------------------------    
+        model_LR = LogisticRegression(class_weight = 'balanced')
+        x_train_LR = x_train
+        y_train_LR = y_train
+        x_test_LR = x_test
+        model_LR.fit(x_train_LR, y_train_LR)
+        pre_LR = model_LR.predict_proba(x_test_LR)
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
         ### RandomForest could return the proba
@@ -114,9 +117,6 @@ def classification(train_ui_up_mp_um_features):
 
                          #algorithm="SAMME",
                          #n_estimators=50, learning_rate=0.1)
-        model.fit(x_train, y_train)
-        predictions = model.predict(x_test)
-        pre = model.predict_proba(x_test)
         
 
         ###grid search for MLP
@@ -170,7 +170,7 @@ def classification(train_ui_up_mp_um_features):
         print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
         '''
         # confusion matrix
-        confusion = confusion_matrix(y_test, predictions)
+        '''confusion = confusion_matrix(y_test, predictions)
         print("\t" + "\t".join(str(x) for x in range(0, 2)))
         print("".join(["-"] * 50))
         for ii in range(0, 2):
@@ -178,12 +178,13 @@ def classification(train_ui_up_mp_um_features):
             print("%i:\t" % jj + "\t".join(str(confusion[ii][x]) for x in range(0, 2)))
 
         print(pre)
+        '''
         #print(f1_score(y_test, predictions))
         #print(precision_score(y_test, predictions))
         #print(recall_score(y_test, predictions))
         # print(roc_auc_score(y_test, predictions))
         # print(classification_report(y_test, predictions))
-        fpr, tpr, thresholds = roc_curve(y_test, pre[:,1])  
+        fpr, tpr, thresholds = roc_curve(y_test, pre_LR[:,1])  
         roc_auc = auc(fpr, tpr)  
         print(roc_auc)
 

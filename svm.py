@@ -99,10 +99,13 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_train)
         scaler.transform(x_test)
 
-### NN models-----------------------------------------------------------------------------------------    
-        model = MLPClassifier(solver='adam', alpha=1e-5,
-                    hidden_layer_sizes=(80,20), random_state=1,
-                    learning_rate_init = 0.01, batch_size = 'auto')
+### SVM models-----------------------------------------------------------------------------------------    
+        model_SVM = svm.SVC(C= 0.5, gamma=0.8, kernel = 'rbf', decision_function_shape = 'ovr', class_weight = 'balanced', probability = True)
+        x_train_SVM = x_train
+        y_train_SVM = y_train
+        x_test_SVM = x_test
+        model_SVM.fit(x_train_SVM, y_train_SVM)
+        pre_SVM = model_SVM.predict_proba(x_test_SVM)
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
         ### RandomForest could return the proba
@@ -114,22 +117,17 @@ def classification(train_ui_up_mp_um_features):
 
                          #algorithm="SAMME",
                          #n_estimators=50, learning_rate=0.1)
-        model.fit(x_train, y_train)
-        predictions = model.predict(x_test)
-        pre = model.predict_proba(x_test)
         
 
-        ###grid search for MLP
-        #find alpha
-        '''print('find alpha')
-        param_test1 = { 'alpha':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
-        gsearch1 = GridSearchCV(estimator = MLPClassifier(solver='adam',
-                    hidden_layer_sizes=(5, 2), random_state=1,
-                    learning_rate_init = 0.001, batch_size = 'auto'), 
+        ###grid search for SVM
+        #find C and gamma
+        print('find C and gamma')
+        param_test1 = { 'C':[0.001,0.01,0.1,0.3,0.5,0.8,1.0,2.0,10.0], 'gamma':[0.1,0.3,0.5,0.8,1.0,2.0,3.0,4.0,5.0,7.0,8.0,9.0,10.0]}
+        gsearch1 = GridSearchCV(estimator = svm.SVC(kernel = 'rbf', decision_function_shape = 'ovr', class_weight = 'balanced', probability = True),
                        param_grid = param_test1, scoring='roc_auc',cv=5)
         gsearch1.fit(x_train, y_train)
         print(gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_)
-        '''
+
 
         #find learning rate  
         '''print('find learning rate')
@@ -170,7 +168,7 @@ def classification(train_ui_up_mp_um_features):
         print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
         '''
         # confusion matrix
-        confusion = confusion_matrix(y_test, predictions)
+        '''confusion = confusion_matrix(y_test, predictions)
         print("\t" + "\t".join(str(x) for x in range(0, 2)))
         print("".join(["-"] * 50))
         for ii in range(0, 2):
@@ -178,12 +176,13 @@ def classification(train_ui_up_mp_um_features):
             print("%i:\t" % jj + "\t".join(str(confusion[ii][x]) for x in range(0, 2)))
 
         print(pre)
+        '''
         #print(f1_score(y_test, predictions))
         #print(precision_score(y_test, predictions))
         #print(recall_score(y_test, predictions))
         # print(roc_auc_score(y_test, predictions))
         # print(classification_report(y_test, predictions))
-        fpr, tpr, thresholds = roc_curve(y_test, pre[:,1])  
+        fpr, tpr, thresholds = roc_curve(y_test, pre_SVM[:,1])  
         roc_auc = auc(fpr, tpr)  
         print(roc_auc)
 

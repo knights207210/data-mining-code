@@ -8,8 +8,10 @@ import math
 import traceback
 import matplotlib.pyplot as plt
 import lightgbm as lgb
+import xgboost as xgb
 from collections import defaultdict
 
+from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
 from sklearn.grid_search import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
@@ -41,10 +43,10 @@ def features():
     """
     get all features
     """
-    cur.execute("select * from train_ui_up_mp_um_profile")
+    cur.execute("select * from train_ui_up_mp_um_double_pca_sim_slope_fillna")
     train_ui_up_mp_um_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
 
-    return train_ui_up_mp_um_features
+    return train_ui_up_mp_um_double_pca_sim_slope_fillna_features
 
     # train_data_user_merchant_profile_features_stat = train_data_user_merchant_profile_features.groupby('label').describe()
     # train_data_user_merchant_profile_features_stat.to_csv(output_path + "train_data_user_merchant_profile_features_stat.csv")
@@ -58,13 +60,13 @@ def features():
     # plt.xticks(np.arange(-2, 2, 1))
     # plt.show()
 
-def classification(train_ui_up_mp_um_features):
+def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
     # ignore NaN, if any value is NaN
     # train_data_user_merchant_profile_features = train_data_user_merchant_profile_features.dropna(how = 'any')
-    x = train_ui_up_mp_um_features.filter(regex = 'mp')
+    x = train_ui_up_mp_um_double_pca_sim_slope_fillna_features.filter(regex = 'mp')
     x = x.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-    y = train_ui_up_mp_um_features['label']
+    y = train_ui_up_mp_um_double_pca_sim_slope_fillna_features['label']
 
     train_size = [50000, 100000, 150000, 200000]
     test_size = [10000, 20000, 30000, 50000]
@@ -99,7 +101,23 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_test)
 
 
+        ###xgboost
+        print('Start Xgb')
+        x_train_Xgb = x_train
+        y_train_Xgb = y_train
+        x_test_Xgb = x_test
+        y_test_Xgb = y_test
+        xgb_train = xgb.DMatrix(x_train_Xgb, y_train_Xgb)
+        xgb_eval = xgb.DMatrix(x_test_Xgb, y_test_Xgb)
 
+       
+        xgb_model = xgb.XGBClassifier(learning_rate = 0.3, max_depth = 6, min_child_weight = 1, gamma = 0.1).fit(x_train_Xgb, y_train_Xgb)
+        pre_Xgb = xgb_model.predict_proba(x_test_Xgb)
+        print(pre_Xgb)
+        fpr_Xgb, tpr_Xgb, thresholds_Xgb = roc_curve(y_test_Xgb, pre_Xgb[:,1])  
+        roc_auc_Xgb = auc(fpr_Xgb, tpr_Xgb)  
+        print(roc_auc_Xgb)
+        
         ###lightgbm-----------------------------------------------------------------------
         # create dataset for lightgbm
         print('Start GBM')
@@ -116,8 +134,8 @@ def classification(train_ui_up_mp_um_features):
             'boosting_type': 'gbdt',
             'objective': 'regression',
             'metric': {'l2', 'auc'},
-            'num_leaves': 31,
-            'learning_rate': 0.05,
+            'num_leaves': 91,
+            'learning_rate': 0.1,
             'feature_fraction': 0.9,
             'bagging_fraction': 0.8,
             'bagging_freq': 5,
@@ -141,11 +159,11 @@ def classification(train_ui_up_mp_um_features):
         #print('Start predicting...')
         # predict
         pre_GBM = gbm.predict(x_test_GBM)
-        '''
+
         # feature importances
         #print('Feature importances:', list(gbm.feature_importances_))
         # other scikit-learn modules
-        estimator = lgb.LGBMRegressor(num_leaves=31)
+        '''estimator = lgb.LGBMRegressor(num_leaves=31)
         param_grid = {
             'learning_rate': [0.01, 0.1, 1],
             'n_estimators': [20, 40]
@@ -155,17 +173,18 @@ def classification(train_ui_up_mp_um_features):
         print('Best parameters found by grid search are:', gbm.best_params_)
         '''
 
-        ###bagging of RF
+
+        ###lightgbm rf
         ###lightgbm-----------------------------------------------------------------------
-        print('Start RF_bag')
+        print('Start lightgbm_RF')
         # specify your configurations as a dict
         params = {
             'task': 'predict',
             'boosting_type': 'rf',
             'objective': 'regression',
             'metric': {'l2', 'auc'},
-            'num_leaves': 31,
-            'learning_rate': 0.05,
+            'num_leaves': 91,
+            'learning_rate': 0.15,
             'feature_fraction': 0.9,
             'bagging_fraction': 0.8,
             'bagging_freq': 5,
@@ -187,7 +206,7 @@ def classification(train_ui_up_mp_um_features):
         
         #print('Start predicting...')
         # predict
-        pre_RF_bag = gbm.predict(x_test_GBM)
+        pre_lightRF = gbm.predict(x_test_GBM)
 
         ###LR model-----------------------------------------------------------------------------------------    
         print('Start LR')
@@ -198,6 +217,9 @@ def classification(train_ui_up_mp_um_features):
         x_test_LR = x_test
         model_LR.fit(x_train_LR, y_train_LR)
         pre_LR = model_LR.predict_proba(x_test_LR)
+        fpr_LR, tpr_LR, thresholds_LR = roc_curve(y_test, pre_LR[:,1])  
+        roc_auc_LR = auc(fpr_LR, tpr_LR)  
+        print(roc_auc_LR)
 
         ###grid search for LR
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
@@ -211,13 +233,15 @@ def classification(train_ui_up_mp_um_features):
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
         print('Start SVM')
-        model_SVM = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
+        model_SVM = svm.SVC(C= 10.0, gamma=9.0, kernel = 'rbf', decision_function_shape = 'ovr', class_weight = 'balanced', probability = True)
         x_train_SVM = x_train
         y_train_SVM = y_train
         x_test_SVM = x_test
         model_SVM.fit(x_train_SVM, y_train_SVM)
-        pre_SVM = model_SVM.predict(x_test_SVM)
-
+        pre_SVM = model_SVM.predict_proba(x_test_SVM)
+        fpr_SVM, tpr_SVM, thresholds_SVM = roc_curve(y_test, pre_SVM[:,1])  
+        roc_auc_SVM = auc(fpr_SVM, tpr_SVM)  
+        print(roc_auc_SVM)
         ###grid search for SVM
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
         #gsearch1 = GridSearchCV(estimator = RandomForestClassifier(n_estimators = 70,
@@ -236,7 +260,10 @@ def classification(train_ui_up_mp_um_features):
         x_test_RF = x_test
         model_RF.fit(x_train_RF,y_train_RF)
         pre_RF = model_RF.predict_proba(x_test_RF)
-
+        fpr_RF, tpr_RF, thresholds_RF = roc_curve(y_test, pre_RF[:,1])  
+        roc_auc_RF = auc(fpr_RF, tpr_RF)  
+        print(roc_auc_RF)
+        
         ### grid search for RF
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
         #gsearch1 = GridSearchCV(estimator = RandomForestClassifier(n_estimators = 70,
@@ -261,6 +288,9 @@ def classification(train_ui_up_mp_um_features):
         x_test_Ada = x_test
         model_Ada.fit(x_train_Ada,y_train_Ada)
         pre_Ada = model_Ada.predict_proba(x_test_Ada)
+        fpr_Ada, tpr_Ada, thresholds_Ada = roc_curve(y_test, pre_Ada[:,1])  
+        roc_auc_Ada = auc(fpr_Ada, tpr_Ada)  
+        print(roc_auc_Ada)
         
         ###grid search for Ada
         #param_test1 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
@@ -270,8 +300,72 @@ def classification(train_ui_up_mp_um_features):
         #gsearch1.fit(x_train, y_train)
         #print(gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_)
 
+        print('Start NN')
+        model_NN = MLPClassifier(solver='adam', alpha=1e-5,
+                    hidden_layer_sizes=(80,20), random_state=1,
+                    learning_rate_init = 0.01, batch_size = 'auto')
+        x_train_NN = x_train
+        y_train_NN = y_train
+        x_test_NN = x_test
+        model_NN.fit(x_train_NN,y_train_NN)
+        pre_NN = model_NN.predict_proba(x_test_NN)
+        fpr_NN, tpr_NN, thresholds_NN = roc_curve(y_test, pre_NN[:,1])  
+        roc_auc_NN = auc(fpr_NN, tpr_NN)  
+        print(roc_auc_NN)
+    
+        ###grid search for MLP
+        #find alpha
+        '''print('find alpha')
+        param_test1 = { 'alpha':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
+        gsearch1 = GridSearchCV(estimator = MLPClassifier(solver='adam',
+                    hidden_layer_sizes=(5, 2), random_state=1,
+                    learning_rate_init = 0.001, batch_size = 'auto'), 
+                       param_grid = param_test1, scoring='roc_auc',cv=5)
+        gsearch1.fit(x_train, y_train)
+        print(gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_)
+        '''
+
+        #find learning rate  
+        '''print('find learning rate')
+        param_test2 = { 'learning_rate_init':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
+        gsearch2 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,
+                    hidden_layer_sizes=(5, 2), random_state=1,batch_size = 'auto'), 
+                       param_grid = param_test2, scoring='roc_auc',cv=5)
+        gsearch2.fit(x_train, y_train)
+        print(gsearch2.grid_scores_, gsearch2.best_params_, gsearch2.best_score_)
+        '''
+
+        #find hidden layer
+        '''print('find hidden_layer_sizes_node')
+        param_test3 = { 'hidden_layer_sizes':[(30,),(35,),(40,),(50,),(60,),(68,),(75,),(80,),(90,),(100,)]}
+        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
+                    random_state=1,batch_size = 'auto'), 
+                       param_grid = param_test3, scoring='roc_auc',cv=5)
+        gsearch3.fit(x_train, y_train)
+        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
+        '''
+
+        #find hidden layer  
+        '''print('find hidden_layer_sizes')
+        param_test3 = { 'hidden_layer_sizes':[(80,20,20,10,15,5),(80,20,20,10,15,10),(80,20,20,10,15,15),(80,20,20,10,15,20),(80,20,20,10,15,25),(80,20,20,10,15,30)]}
+        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
+                    random_state=1,batch_size = 'auto'), 
+                       param_grid = param_test3, scoring='roc_auc',cv=5)
+        gsearch3.fit(x_train, y_train)
+        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
+        '''
+         #find hidden layer  
+        '''print('find hidden_layer_sizes')
+        param_test3 = { 'hidden_layer_sizes':[(80),(80,20),(80,20,20),(80,20,20,10),(80,20,20,10,15),(80,20,20,10,15,10)]}
+        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
+                    random_state=1,batch_size = 'auto'), 
+                       param_grid = param_test3, scoring='roc_auc',cv=5)
+        gsearch3.fit(x_train, y_train)
+        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
+        '''
+
         ###train model-------------------------------------------------------------------------------------------
-        model.fit(x_train, y_train)
+        '''model.fit(x_train, y_train)
         predictions = model.predict(x_test)
         pre = model.predict_proba(x_test)
         # confusion matrix
@@ -288,19 +382,21 @@ def classification(train_ui_up_mp_um_features):
         print(recall_score(y_test, predictions))
         print(roc_auc_score(y_test, predictions))
         # print(classification_report(y_test, predictions))
-
+        '''
+    
     print('Finish!')
 
     print('Start blend')
 
-    w = [0.1,0.1,0.1,0.2,0.1,0.2]
-    #pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_FM[:,1]+w[6]*pre_RF_bag+w[7]*pre_Xgb
-    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_RF_bag
+    w = [0.05,0.05,0.3,0.3,0.35,0.05]
+    #pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_FM[:,1]+w[6]*pre_RF_bag+w[7]*pre_Xgb[:,1]
+    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM[:,1]+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_NN[:,1]
     fpr, tpr, thresholds = roc_curve(y_test, pre_blend)  
     roc_auc = auc(fpr, tpr)  
     print(roc_auc)
+    
 
 if __name__ == "__main__":
 
-    train_ui_up_mp_um_features = features()
-    classification(train_ui_up_mp_um_features)
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = features()
+    classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features)

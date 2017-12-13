@@ -99,10 +99,14 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_train)
         scaler.transform(x_test)
 
-### NN models-----------------------------------------------------------------------------------------    
-        model = MLPClassifier(solver='adam', alpha=1e-5,
-                    hidden_layer_sizes=(80,20), random_state=1,
-                    learning_rate_init = 0.01, batch_size = 'auto')
+### RF models-----------------------------------------------------------------------------------------    
+        print('Start RF')
+        model_RF = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
+        x_train_RF = x_train
+        y_train_RF = y_train
+        x_test_RF = x_test
+        model_RF.fit(x_train_RF,y_train_RF)
+        pre_RF = model_RF.predict_proba(x_test_RF)
         ###SVM returns only label
         # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
         ### RandomForest could return the proba
@@ -114,63 +118,39 @@ def classification(train_ui_up_mp_um_features):
 
                          #algorithm="SAMME",
                          #n_estimators=50, learning_rate=0.1)
-        model.fit(x_train, y_train)
-        predictions = model.predict(x_test)
-        pre = model.predict_proba(x_test)
         
 
-        ###grid search for MLP
-        #find alpha
-        '''print('find alpha')
-        param_test1 = { 'alpha':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
-        gsearch1 = GridSearchCV(estimator = MLPClassifier(solver='adam',
-                    hidden_layer_sizes=(5, 2), random_state=1,
-                    learning_rate_init = 0.001, batch_size = 'auto'), 
+        ###grid search for RF
+        #find n_estimator
+        '''print('find n_estimator')
+        param_test1 = { 'n_estimators':[20,40,60,70,80,90,100,150,200]}
+        gsearch1 = GridSearchCV(estimator = RandomForestClassifier(min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced'), 
                        param_grid = param_test1, scoring='roc_auc',cv=5)
         gsearch1.fit(x_train, y_train)
         print(gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_)
         '''
 
-        #find learning rate  
-        '''print('find learning rate')
-        param_test2 = { 'learning_rate_init':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
-        gsearch2 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,
-                    hidden_layer_sizes=(5, 2), random_state=1,batch_size = 'auto'), 
+        #find max_depth
+        '''print('find max_depth')
+        param_test2 = { 'max_depth':[12,14,16,18,20,22,24,26], 'min_samples_split':[10]}
+        gsearch2 = GridSearchCV(estimator = RandomForestClassifier(n_estimators = 70,
+                        max_features='sqrt' ,random_state=10,class_weight = 'balanced',min_samples_leaf=20),  
                        param_grid = param_test2, scoring='roc_auc',cv=5)
         gsearch2.fit(x_train, y_train)
         print(gsearch2.grid_scores_, gsearch2.best_params_, gsearch2.best_score_)
         '''
 
-        #find hidden layer
-        '''print('find hidden_layer_sizes_node')
-        param_test3 = { 'hidden_layer_sizes':[(30,),(35,),(40,),(50,),(60,),(68,),(75,),(80,),(90,),(100,)]}
-        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
-                    random_state=1,batch_size = 'auto'), 
-                       param_grid = param_test3, scoring='roc_auc',cv=5)
-        gsearch3.fit(x_train, y_train)
-        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
-        '''
-
-        #find hidden layer  
-        '''print('find hidden_layer_sizes')
-        param_test3 = { 'hidden_layer_sizes':[(80,20,20,10,15,5),(80,20,20,10,15,10),(80,20,20,10,15,15),(80,20,20,10,15,20),(80,20,20,10,15,25),(80,20,20,10,15,30)]}
-        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
-                    random_state=1,batch_size = 'auto'), 
-                       param_grid = param_test3, scoring='roc_auc',cv=5)
-        gsearch3.fit(x_train, y_train)
-        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
-        '''
-         #find hidden layer  
-        '''print('find hidden_layer_sizes')
-        param_test3 = { 'hidden_layer_sizes':[(80),(80,20),(80,20,20),(80,20,20,10),(80,20,20,10,15),(80,20,20,10,15,10)]}
-        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
-                    random_state=1,batch_size = 'auto'), 
-                       param_grid = param_test3, scoring='roc_auc',cv=5)
+        #find min_samples_leaf
+        '''print('find min_samples_leaf')
+        param_test3 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
+        gsearch3 = GridSearchCV(estimator = RandomForestClassifier(n_estimators = 70,
+                        max_features='sqrt' ,random_state=10,class_weight = 'balanced',max_depth =22), 
+                        param_grid = param_test3, scoring='roc_auc',cv=5)
         gsearch3.fit(x_train, y_train)
         print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
         '''
         # confusion matrix
-        confusion = confusion_matrix(y_test, predictions)
+        '''confusion = confusion_matrix(y_test, predictions)
         print("\t" + "\t".join(str(x) for x in range(0, 2)))
         print("".join(["-"] * 50))
         for ii in range(0, 2):
@@ -178,12 +158,13 @@ def classification(train_ui_up_mp_um_features):
             print("%i:\t" % jj + "\t".join(str(confusion[ii][x]) for x in range(0, 2)))
 
         print(pre)
+        '''
         #print(f1_score(y_test, predictions))
         #print(precision_score(y_test, predictions))
         #print(recall_score(y_test, predictions))
         # print(roc_auc_score(y_test, predictions))
         # print(classification_report(y_test, predictions))
-        fpr, tpr, thresholds = roc_curve(y_test, pre[:,1])  
+        fpr, tpr, thresholds = roc_curve(y_test, pre_SVM[:,1])  
         roc_auc = auc(fpr, tpr)  
         print(roc_auc)
 

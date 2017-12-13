@@ -99,26 +99,55 @@ def classification(train_ui_up_mp_um_features):
         scaler.transform(x_train)
         scaler.transform(x_test)
 
-### NN models-----------------------------------------------------------------------------------------    
-        model = MLPClassifier(solver='adam', alpha=1e-5,
-                    hidden_layer_sizes=(80,20), random_state=1,
-                    learning_rate_init = 0.01, batch_size = 'auto')
-        ###SVM returns only label
-        # model = svm.SVC(kernel = 'linear', decision_function_shape = 'ovr')
-        ### RandomForest could return the proba
-        # model = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced')
-        ###GradientBoosting return the proba
-        # model = GradientBoostingClassifier()
-        ###adaboost could return the proba
-        # model = AdaBoostClassifier( base_estimator = RandomForestClassifier(n_estimators=70, min_samples_split=10, min_samples_leaf=10,max_depth =22,max_features='sqrt' ,random_state=10,class_weight = 'balanced'),
+### GBM models-----------------------------------------------------------------------------------------    
+        lgb_train = lgb.Dataset(x_train, y_train)
+        lgb_eval = lgb.Dataset(x_test, y_test, reference=lgb_train)
 
-                         #algorithm="SAMME",
-                         #n_estimators=50, learning_rate=0.1)
-        model.fit(x_train, y_train)
-        predictions = model.predict(x_test)
-        pre = model.predict_proba(x_test)
+        # specify your configurations as a dict
+        params = {
+            'task': 'predict',
+            'boosting_type': 'gbdt',
+            'objective': 'regression',
+            'metric': {'l2', 'auc'},
+            'num_leaves': 91,
+            'learning_rate': 0.1,
+            'feature_fraction': 0.9,
+            'bagging_fraction': 0.8,
+            'bagging_freq': 5,
+            'verbose': 0
+        }
+
+       # print('Start training...')
+        # train
+        gbm = lgb.train(params,
+                lgb_train,
+                num_boost_round=20,
+                valid_sets=lgb_eval,
+                early_stopping_rounds=5)
+
+        #print('Save model...')
+        # save model to file
+        gbm.save_model('model.txt')
+
         
 
+        #print('Start predicting...')
+        # predict
+        pre_GBM = gbm.predict(x_test)
+        
+        # feature importances
+        #print('Feature importances:', list(gbm.feature_importances_))
+        # other scikit-learn modules
+        '''estimator = lgb.LGBMRegressor(num_leaves=31)
+        param_grid = {
+            'learning_rate': [0.001,0.01,0.05,0.1,0.15,1]
+            #'n_estimators': [20, 40,60,80,100,120,140,160,180,200],
+            #'num_leaves': [5,10,15,20,30,40,50,60,70,80,100]
+        }
+        gbm = GridSearchCV(estimator, param_grid)
+        gbm.fit(x_train, y_train)
+        print('Best parameters found by grid search are:', gbm.best_params_)
+        '''
         ###grid search for MLP
         #find alpha
         '''print('find alpha')
@@ -170,20 +199,20 @@ def classification(train_ui_up_mp_um_features):
         print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
         '''
         # confusion matrix
-        confusion = confusion_matrix(y_test, predictions)
+        '''confusion = confusion_matrix(y_test, pre_GBM)
         print("\t" + "\t".join(str(x) for x in range(0, 2)))
         print("".join(["-"] * 50))
         for ii in range(0, 2):
             jj = ii
             print("%i:\t" % jj + "\t".join(str(confusion[ii][x]) for x in range(0, 2)))
-
-        print(pre)
+        '''
+        #print(pre)
         #print(f1_score(y_test, predictions))
         #print(precision_score(y_test, predictions))
         #print(recall_score(y_test, predictions))
         # print(roc_auc_score(y_test, predictions))
         # print(classification_report(y_test, predictions))
-        fpr, tpr, thresholds = roc_curve(y_test, pre[:,1])  
+        fpr, tpr, thresholds = roc_curve(y_test, pre_GBM)  
         roc_auc = auc(fpr, tpr)  
         print(roc_auc)
 
