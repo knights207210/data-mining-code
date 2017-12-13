@@ -164,7 +164,7 @@ def classification(train_ui_up_mp_um_features):
         #print(recall_score(y_test, predictions))
         # print(roc_auc_score(y_test, predictions))
         # print(classification_report(y_test, predictions))
-        fpr, tpr, thresholds = roc_curve(y_test, pre_SVM[:,1])  
+        fpr, tpr, thresholds = roc_curve(y_test, pre_RF[:,1])  
         roc_auc = auc(fpr, tpr)  
         print(roc_auc)
 

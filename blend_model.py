@@ -44,7 +44,7 @@ def features():
     get all features
     """
     cur.execute("select * from train_ui_up_mp_um_double_pca_sim_slope_fillna")
-    train_ui_up_mp_um_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
 
     return train_ui_up_mp_um_double_pca_sim_slope_fillna_features
 
@@ -113,7 +113,7 @@ def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
        
         xgb_model = xgb.XGBClassifier(learning_rate = 0.3, max_depth = 6, min_child_weight = 1, gamma = 0.1).fit(x_train_Xgb, y_train_Xgb)
         pre_Xgb = xgb_model.predict_proba(x_test_Xgb)
-        print(pre_Xgb)
+        #print(pre_Xgb)
         fpr_Xgb, tpr_Xgb, thresholds_Xgb = roc_curve(y_test_Xgb, pre_Xgb[:,1])  
         roc_auc_Xgb = auc(fpr_Xgb, tpr_Xgb)  
         print(roc_auc_Xgb)
@@ -176,6 +176,7 @@ def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
         ###lightgbm rf
         ###lightgbm-----------------------------------------------------------------------
+        '''
         print('Start lightgbm_RF')
         # specify your configurations as a dict
         params = {
@@ -207,6 +208,7 @@ def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
         #print('Start predicting...')
         # predict
         pre_lightRF = gbm.predict(x_test_GBM)
+        '''
 
         ###LR model-----------------------------------------------------------------------------------------    
         print('Start LR')
@@ -388,9 +390,9 @@ def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
     print('Start blend')
 
-    w = [0.05,0.05,0.3,0.3,0.35,0.05]
-    #pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_FM[:,1]+w[6]*pre_RF_bag+w[7]*pre_Xgb[:,1]
-    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM[:,1]+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_NN[:,1]
+    w = [0.05,0.05,0.2,0.2,0.2,0.2,0.1]
+    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM[:,1]+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_Xgb[:,1]+w[6]*pre_NN[:,1]
+    #pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM[:,1]+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_NN[:,1]
     fpr, tpr, thresholds = roc_curve(y_test, pre_blend)  
     roc_auc = auc(fpr, tpr)  
     print(roc_auc)
