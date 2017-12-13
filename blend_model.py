@@ -102,6 +102,7 @@ def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
 
         ###xgboost
+        '''
         print('Start Xgb')
         x_train_Xgb = x_train
         y_train_Xgb = y_train
@@ -117,7 +118,7 @@ def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
         fpr_Xgb, tpr_Xgb, thresholds_Xgb = roc_curve(y_test_Xgb, pre_Xgb[:,1])  
         roc_auc_Xgb = auc(fpr_Xgb, tpr_Xgb)  
         print(roc_auc_Xgb)
-        
+        '''
         ###lightgbm-----------------------------------------------------------------------
         # create dataset for lightgbm
         print('Start GBM')
@@ -390,8 +391,8 @@ def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
     print('Start blend')
 
-    w = [0.05,0.05,0.2,0.2,0.2,0.2,0.1]
-    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM[:,1]+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_Xgb[:,1]+w[6]*pre_NN[:,1]
+    w = [0.05,0.05,0.35,0.15,0.35,0.05]
+    pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM[:,1]+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_NN[:,1]
     #pre_blend = w[0]*pre_LR[:,1]+w[1]*pre_SVM[:,1]+w[2]*pre_RF[:,1]+w[3]*pre_GBM+w[4]*pre_Ada[:,1]+w[5]*pre_NN[:,1]
     fpr, tpr, thresholds = roc_curve(y_test, pre_blend)  
     roc_auc = auc(fpr, tpr)  
