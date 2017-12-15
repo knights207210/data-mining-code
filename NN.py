@@ -121,7 +121,7 @@ def classification(train_ui_up_mp_um_features):
 
         ###grid search for MLP
         #find alpha
-        '''print('find alpha')
+        print('find alpha')
         param_test1 = { 'alpha':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
         gsearch1 = GridSearchCV(estimator = MLPClassifier(solver='adam',
                     hidden_layer_sizes=(5, 2), random_state=1,
@@ -129,7 +129,7 @@ def classification(train_ui_up_mp_um_features):
                        param_grid = param_test1, scoring='roc_auc',cv=5)
         gsearch1.fit(x_train, y_train)
         print(gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_)
-        '''
+        
 
         #find learning rate  
         '''print('find learning rate')

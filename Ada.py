@@ -42,10 +42,10 @@ def features():
     """
     get all features
     """
-    cur.execute("select * from train_ui_up_mp_um_profile")
-    train_ui_up_mp_um_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
+    cur.execute("select * from train_ui_up_mp_train_ui_up_mp_um_double_pca_sim_slope_fillna")
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
 
-    return train_ui_up_mp_um_features
+    return train_ui_up_mp_um_double_pca_sim_slope_fillna_features
 
     # train_data_user_merchant_profile_features_stat = train_data_user_merchant_profile_features.groupby('label').describe()
     # train_data_user_merchant_profile_features_stat.to_csv(output_path + "train_data_user_merchant_profile_features_stat.csv")
@@ -59,13 +59,13 @@ def features():
     # plt.xticks(np.arange(-2, 2, 1))
     # plt.show()
 
-def classification(train_ui_up_mp_um_features):
+def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
     # ignore NaN, if any value is NaN
     # train_data_user_merchant_profile_features = train_data_user_merchant_profile_features.dropna(how = 'any')
-    x = train_ui_up_mp_um_features.filter(regex = 'mp')
+    x = train_ui_up_mp_um_double_pca_sim_slope_fillna_features.filter(regex = 'mp')
     x = x.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-    y = train_ui_up_mp_um_features['label']
+    y = train_ui_up_mp_um_double_pca_sim_slope_fillna_features['label']
 
     train_size = [50000, 100000, 150000, 200000]
     test_size = [10000, 20000, 30000, 50000]
@@ -167,5 +167,5 @@ def classification(train_ui_up_mp_um_features):
 
 if __name__ == "__main__":
 
-    train_ui_up_mp_um_features = features()
-    classification(train_ui_up_mp_um_features)
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = features()
+    classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features)

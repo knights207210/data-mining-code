@@ -42,10 +42,10 @@ def features():
     """
     get all features
     """
-    cur.execute("select * from train_ui_up_mp_um_profile")
-    train_ui_up_mp_um_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
+    cur.execute("select * from train_ui_up_mp_um_double_pca_sim_slope_fillna")
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
 
-    return train_ui_up_mp_um_features
+    return train_ui_up_mp_um_double_pca_sim_slope_fillna_features
 
     # train_data_user_merchant_profile_features_stat = train_data_user_merchant_profile_features.groupby('label').describe()
     # train_data_user_merchant_profile_features_stat.to_csv(output_path + "train_data_user_merchant_profile_features_stat.csv")
@@ -59,13 +59,13 @@ def features():
     # plt.xticks(np.arange(-2, 2, 1))
     # plt.show()
 
-def classification(train_ui_up_mp_um_features):
+def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
     # ignore NaN, if any value is NaN
     # train_data_user_merchant_profile_features = train_data_user_merchant_profile_features.dropna(how = 'any')
-    x = train_ui_up_mp_um_features.filter(regex = 'mp')
+    x = train_ui_up_mp_um_double_pca_sim_slope_fillna_features.filter(regex = 'mp')
     x = x.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-    y = train_ui_up_mp_um_features['label']
+    y = train_ui_up_mp_um_double_pca_sim_slope_fillna_features['label']
 
     train_size = [50000, 100000, 150000, 200000]
     test_size = [10000, 20000, 30000, 50000]
@@ -138,66 +138,17 @@ def classification(train_ui_up_mp_um_features):
         # feature importances
         #print('Feature importances:', list(gbm.feature_importances_))
         # other scikit-learn modules
-        '''estimator = lgb.LGBMRegressor(num_leaves=31)
+        estimator = lgb.LGBMRegressor(num_leaves=31)
         param_grid = {
-            'learning_rate': [0.001,0.01,0.05,0.1,0.15,1]
+            #'learning_rate': [0.001,0.01,0.05,0.1,0.15,1]
             #'n_estimators': [20, 40,60,80,100,120,140,160,180,200],
             #'num_leaves': [5,10,15,20,30,40,50,60,70,80,100]
         }
         gbm = GridSearchCV(estimator, param_grid)
         gbm.fit(x_train, y_train)
         print('Best parameters found by grid search are:', gbm.best_params_)
-        '''
-        ###grid search for MLP
-        #find alpha
-        '''print('find alpha')
-        param_test1 = { 'alpha':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
-        gsearch1 = GridSearchCV(estimator = MLPClassifier(solver='adam',
-                    hidden_layer_sizes=(5, 2), random_state=1,
-                    learning_rate_init = 0.001, batch_size = 'auto'), 
-                       param_grid = param_test1, scoring='roc_auc',cv=5)
-        gsearch1.fit(x_train, y_train)
-        print(gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_)
-        '''
 
-        #find learning rate  
-        '''print('find learning rate')
-        param_test2 = { 'learning_rate_init':[1e-5,1e-4,0.001,0.01,0.1,10.0,100.0,1000.0]}
-        gsearch2 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,
-                    hidden_layer_sizes=(5, 2), random_state=1,batch_size = 'auto'), 
-                       param_grid = param_test2, scoring='roc_auc',cv=5)
-        gsearch2.fit(x_train, y_train)
-        print(gsearch2.grid_scores_, gsearch2.best_params_, gsearch2.best_score_)
-        '''
-
-        #find hidden layer
-        '''print('find hidden_layer_sizes_node')
-        param_test3 = { 'hidden_layer_sizes':[(30,),(35,),(40,),(50,),(60,),(68,),(75,),(80,),(90,),(100,)]}
-        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
-                    random_state=1,batch_size = 'auto'), 
-                       param_grid = param_test3, scoring='roc_auc',cv=5)
-        gsearch3.fit(x_train, y_train)
-        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
-        '''
-
-        #find hidden layer  
-        '''print('find hidden_layer_sizes')
-        param_test3 = { 'hidden_layer_sizes':[(80,20,20,10,15,5),(80,20,20,10,15,10),(80,20,20,10,15,15),(80,20,20,10,15,20),(80,20,20,10,15,25),(80,20,20,10,15,30)]}
-        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
-                    random_state=1,batch_size = 'auto'), 
-                       param_grid = param_test3, scoring='roc_auc',cv=5)
-        gsearch3.fit(x_train, y_train)
-        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
-        '''
-         #find hidden layer  
-        '''print('find hidden_layer_sizes')
-        param_test3 = { 'hidden_layer_sizes':[(80),(80,20),(80,20,20),(80,20,20,10),(80,20,20,10,15),(80,20,20,10,15,10)]}
-        gsearch3 = GridSearchCV(estimator = MLPClassifier(solver='adam', alpha=1e-5,learning_rate_init = 0.01,
-                    random_state=1,batch_size = 'auto'), 
-                       param_grid = param_test3, scoring='roc_auc',cv=5)
-        gsearch3.fit(x_train, y_train)
-        print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
-        '''
+       
         # confusion matrix
         '''confusion = confusion_matrix(y_test, pre_GBM)
         print("\t" + "\t".join(str(x) for x in range(0, 2)))
@@ -220,5 +171,5 @@ def classification(train_ui_up_mp_um_features):
 
 if __name__ == "__main__":
 
-    train_ui_up_mp_um_features = features()
-    classification(train_ui_up_mp_um_features)
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = features()
+    classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features)

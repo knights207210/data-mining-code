@@ -42,10 +42,10 @@ def features():
     """
     get all features
     """
-    cur.execute("select * from train_ui_up_mp_um_profile")
-    train_ui_up_mp_um_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
+    cur.execute("select * from train_ui_up_mp_um_double_pca_sim_slope_fillna")
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = pd.DataFrame(cur.fetchall(), columns = [i[0] for i in cur.description])
 
-    return train_ui_up_mp_um_features
+    return train_ui_up_mp_um_double_pca_sim_slope_fillna_features
 
     # train_data_user_merchant_profile_features_stat = train_data_user_merchant_profile_features.groupby('label').describe()
     # train_data_user_merchant_profile_features_stat.to_csv(output_path + "train_data_user_merchant_profile_features_stat.csv")
@@ -59,13 +59,13 @@ def features():
     # plt.xticks(np.arange(-2, 2, 1))
     # plt.show()
 
-def classification(train_ui_up_mp_um_features):
+def classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features):
 
     # ignore NaN, if any value is NaN
     # train_data_user_merchant_profile_features = train_data_user_merchant_profile_features.dropna(how = 'any')
-    x = train_ui_up_mp_um_features.filter(regex = 'mp')
+    x = train_ui_up_mp_um_double_pca_sim_slope_fillna_features.filter(regex = 'mp')
     x = x.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-    y = train_ui_up_mp_um_features['label']
+    y = train_ui_up_mp_um_double_pca_sim_slope_fillna_features['label']
 
     train_size = [50000, 100000, 150000, 200000]
     test_size = [10000, 20000, 30000, 50000]
@@ -132,7 +132,7 @@ def classification(train_ui_up_mp_um_features):
 
         #find max_depth
         '''print('find max_depth')
-        param_test2 = { 'max_depth':[12,14,16,18,20,22,24,26], 'min_samples_split':[10]}
+        param_test2 = { 'max_depth':[12,14,16,18,20,22,24,26], 'min_samples_split':[2,4,6,8,10,12,20,30]}
         gsearch2 = GridSearchCV(estimator = RandomForestClassifier(n_estimators = 70,
                         max_features='sqrt' ,random_state=10,class_weight = 'balanced',min_samples_leaf=20),  
                        param_grid = param_test2, scoring='roc_auc',cv=5)
@@ -141,14 +141,14 @@ def classification(train_ui_up_mp_um_features):
         '''
 
         #find min_samples_leaf
-        '''print('find min_samples_leaf')
-        param_test3 = { 'min_samples_split':[10],'min_samples_leaf':[10]}
+        print('find min_samples_leaf')
+        param_test3 = { 'min_samples_split':[2,4,6,8,10,12,20,30],'min_samples_leaf':[10,20,30,40,50,100]}
         gsearch3 = GridSearchCV(estimator = RandomForestClassifier(n_estimators = 70,
                         max_features='sqrt' ,random_state=10,class_weight = 'balanced',max_depth =22), 
                         param_grid = param_test3, scoring='roc_auc',cv=5)
         gsearch3.fit(x_train, y_train)
         print(gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_)
-        '''
+        
         # confusion matrix
         '''confusion = confusion_matrix(y_test, predictions)
         print("\t" + "\t".join(str(x) for x in range(0, 2)))
@@ -172,5 +172,5 @@ def classification(train_ui_up_mp_um_features):
 
 if __name__ == "__main__":
 
-    train_ui_up_mp_um_features = features()
-    classification(train_ui_up_mp_um_features)
+    train_ui_up_mp_um_double_pca_sim_slope_fillna_features = features()
+    classification(train_ui_up_mp_um_double_pca_sim_slope_fillna_features)
